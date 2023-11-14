@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../neo/src/Neo/Neo.csproj" />
     <ProjectReference Include="..\Neo.ConsoleService\Neo.ConsoleService.csproj" />
   </ItemGroup>
 

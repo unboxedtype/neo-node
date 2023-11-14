@@ -19,6 +19,8 @@ using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
 using Neo.Wallets.NEP6;
+using Neo.IO;
+using Neo.Ledger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -739,5 +741,45 @@ namespace Neo.CLI
                 ConsoleHelper.Info("Incomplete signature:\n", $"{context}");
             }
         }
+    
+
+	private void SignAndWriteTx(DataCache snapshot, Transaction tx, string binPath, string jsonPath)
+	{
+	    ContractParametersContext context;
+	    try
+	    {
+		context = new ContractParametersContext(snapshot, tx, _neoSystem.Settings.Network);
+	    }
+	    catch (InvalidOperationException e)
+	    {
+		ConsoleHelper.Error("Failed creating contract params: " + GetExceptionMessage(e));
+		throw;
+	    }
+	    CurrentWallet.Sign(context);
+	    if (context.Completed)
+	    {
+		tx.Witnesses = context.GetWitnesses();
+
+		/******************************************/
+		/* This is temporary code for experiments */
+		/******************************************/
+		using (var stream = File.Open(binPath, FileMode.Create)) {
+		    using (var writer = new BinaryWriter(stream)) {
+			((ISerializable)tx).Serialize(writer);
+		    }
+		}
+
+		var txJson = tx.ToJson(NeoSystem.Settings);
+		File.WriteAllText(jsonPath, txJson.ToString());
+		/******************************************/
+		/* END                                    */
+		/******************************************/	       
+		ConsoleHelper.Info("Signed and written transaction with hash:\n", $"{tx.Hash}");
+	    }
+	    else
+	    {
+		ConsoleHelper.Info("Incomplete signature:\n", $"{context}");
+	    }
+	}
     }
 }

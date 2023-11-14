@@ -488,7 +488,7 @@ namespace Neo.ConsoleService
                     {
                         throw new ArgumentException("Handler not found for the command: " + method);
                     }
-
+		    Console.WriteLine($"method = {method.ToString()}");
                     // Add command
 
                     var command = new ConsoleCommandMethod(instance, method, attribute);

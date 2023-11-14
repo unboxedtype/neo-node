@@ -1,10 +1,10 @@
 // Copyright (C) 2016-2023 The Neo Project.
-// 
-// The neo-cli is free software distributed under the MIT software 
+//
+// The neo-cli is free software distributed under the MIT software
 // license, see the accompanying file LICENSE in the main directory of
-// the project or http://www.opensource.org/licenses/mit-license.php 
+// the project or http://www.opensource.org/licenses/mit-license.php
 // for more details.
-// 
+//
 // Redistribution and use in source and binary forms with or without
 // modifications are permitted.
 
@@ -13,9 +13,14 @@ using Neo.Json;
 using Neo.Network.P2P.Payloads;
 using Neo.SmartContract;
 using Neo.SmartContract.Native;
+using Neo.IO;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.IO;
+using System.Text;
+using System.Diagnostics;
+
 
 namespace Neo.CLI
 {
@@ -177,6 +182,37 @@ namespace Neo.CLI
                 return;
             }
             SignAndSendTx(NeoSystem.StoreView, tx);
+        }
+
+	/// <summary>
+        /// Mayhem command.
+        /// </summary>
+        /// <param name="filePath">NEF file path</param>
+        /// <param name="gas">Maximum allowed gas for the transaction.</param>
+        [ConsoleCommand("mayhem", Category = "Contract Commands")]
+        private void OnMayhemCommand(string filePath, decimal maxGas)
+        {
+            if (NoWallet()) return;
+
+	    var nef = new Neo.SmartContract.NefFile ();
+	    var nefBytes = File.ReadAllBytes(filePath);
+	    var rd = new MemoryReader (nefBytes);
+	    nef.Deserialize(ref rd);
+
+            Transaction tx;
+            try
+            {
+                tx = CurrentWallet.MakeTransactionMayhem(NeoSystem.StoreView, nef.Script, null, null, null, (long)maxGas);
+            }
+            catch (InvalidOperationException e)
+            {
+                ConsoleHelper.Error(GetExceptionMessage(e));
+                return;
+            }
+	    tx.SystemFee = (long)maxGas;
+	    var binPath = "./last_transaction.bin";
+	    var jsonPath = "./last_transaction.json";	    
+            SignAndWriteTx(NeoSystem.StoreView, tx, binPath, jsonPath);
         }
     }
 }
